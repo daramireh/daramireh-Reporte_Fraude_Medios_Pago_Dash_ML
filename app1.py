@@ -2,21 +2,17 @@ import dash
 from dash import dcc, html
 from dash.dependencies import Output, Input
 import plotly.express as px
+import numpy as np
 import dash_bootstrap_components as dbc
 import pandas as pd
 import pandas_datareader.data as web
 import datetime
 
-import dash
-from dash import dcc
-from dash import html
+
 from dash import dash_table
 
-import plotly.express as px
 import matplotlib.pyplot as plt
 
-import plotly.tools
-import pandas as pd
 from sklearn import svm, tree, linear_model, neighbors
 from sklearn import naive_bayes, ensemble, discriminant_analysis, gaussian_process
 from sklearn.linear_model import LogisticRegression
@@ -36,7 +32,6 @@ from sklearn import model_selection
 from sklearn.model_selection import KFold
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.model_selection import ShuffleSplit
-import numpy as np
 from sklearn.metrics import auc, roc_auc_score, roc_curve
 from dash.dependencies import Input, Output
 from sklearn.preprocessing import LabelEncoder, OneHotEncoder
