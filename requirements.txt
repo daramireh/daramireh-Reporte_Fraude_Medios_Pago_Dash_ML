@@ -4,5 +4,4 @@ sklearn
 dash
 plotly.express
 datetime
-matplotlib.pyplot
 dash_bootstrap_component
