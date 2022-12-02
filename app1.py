@@ -5,31 +5,19 @@ import plotly.express as px
 import numpy as np
 import dash_bootstrap_components as dbc
 import pandas as pd
-import pandas_datareader.data as web
-import datetime
 
 
-from dash import dash_table
 
-import matplotlib.pyplot as plt
-
-from sklearn import svm, tree, linear_model, neighbors
-from sklearn import naive_bayes, ensemble, discriminant_analysis, gaussian_process
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.naive_bayes import GaussianNB
 from sklearn.svm import SVC
-from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.utils import shuffle
 from sklearn.model_selection import train_test_split
-from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import GridSearchCV
 from sklearn import model_selection
-from sklearn.model_selection import KFold
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.model_selection import ShuffleSplit
 from sklearn.metrics import auc, roc_auc_score, roc_curve
@@ -53,104 +41,8 @@ X = df.iloc[: , 0:9]
 print(df.head(5))
 print()
 
-# https://www.bootstrapcdn.com/bootswatch/
-app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP],
-                meta_tags=[{'name': 'viewport',
-                            'content': 'width=device-width, initial-scale=1.0'}]
-                )
-
-
-# Layout section: Bootstrap (https://hackerthemes.com/bootstrap-cheatsheet/)
-# ************************************************************************
-app.layout = dbc.Container([
-
-    dbc.Row(
-        dbc.Col(html.H1("Descripción transacciones",
-                        className='text-center text-primary mb-4'),
-                width=12)
-    ),
-
-    dbc.Row([
-
-        dbc.Col([
-            dcc.Dropdown(id='my-dpdn', multi=False, value='CASH_OUT',
-                         options=[{'label':x, 'value':x}
-                                  for x in sorted(df['type'].unique())],
-                         ),
-            dcc.Graph(id='line-fig', figure={})
-        ],# width={'size':5, 'offset':1, 'order':1},
-           xs=12, sm=12, md=12, lg=5, xl=5
-        ),
-
-        dbc.Col([
-            dcc.Dropdown(id='my-dpdn2', multi=True, value=['CASH_OUT','TRANSFER'],
-                         options=[{'label':x, 'value':x}
-                                  for x in sorted(df['type'].unique())],
-                         ),
-            dcc.Graph(id='line-fig2', figure={})
-        ], #width={'size':5, 'offset':0, 'order':2},
-           xs=12, sm=12, md=12, lg=5, xl=5
-        ),
-
-    ], justify='start'),  # Horizontal:start,center,end,between,around
-
-    dbc.Row([
-        dbc.Col([
-            html.P("Seleccione una transacción:",
-                   style={"textDecoration": "underline"}),
-            dcc.Checklist(id='my-checklist', value=['CASH_OUT', 'TRANSFER', 'CASH_IN'],
-                          options=[{'label':x, 'value':x}
-                                   for x in sorted(df['type'].unique())],
-                          labelClassName="mr-3"),
-            dcc.Graph(id='my-hist', figure={}),
-        ], #width={'size':5, 'offset':1},
-           xs=12, sm=12, md=12, lg=5, xl=5
-        ),
-
-
-    ], align="center")  # Vertical: start, center, end
-
-], fluid=True)
-
-
-# Callback section: connecting the components
-# ************************************************************************
-# Line chart - Single
-@app.callback(
-    Output('line-fig', 'figure'),
-    Input('my-dpdn', 'value')
-)
-def update_graph(transaction):
-    dff = df[df['type']==transaction]
-    figln = px.line(dff, x='step', y='amount')
-    return figln
-
-
-# Line chart - multiple
-@app.callback(
-    Output('line-fig2', 'figure'),
-    Input('my-dpdn2', 'value')
-)
-def update_graph(transaction):
-    dff = df[df['type'].isin(transaction)]
-    figln2 = px.line(dff, x='step', y='amount', color='isFraud')
-    return figln2
-
-
-# Histogram
-@app.callback(
-    Output('my-hist', 'figure'),
-    Input('my-checklist', 'value')
-)
-def update_graph(transaction):
-    dff = df[df['type'].isin(transaction)]
-    dff = dff[dff['type']=='TRANSFER']
-    fighist = px.bar(dff, x='type', y='isFraud')
-    return fighist
-
-
 # import MinMaxScaler
-from sklearn.preprocessing import MinMaxScaler
+
 scaler = MinMaxScaler(feature_range=(0, 5))
 
 names1 = ['No', 'Si']
@@ -215,18 +107,10 @@ def repetir(lista, veces):
         salida.extend([elemento] * veces)
     return salida
 
-import plotly.express as px
 df = pd.DataFrame(np.concatenate((auc_results)))
 df['Algoritmo']=repetir(names,10)
 figbox = px.box(df, x=df.Algoritmo, y=0,
                  width=750, height=400)
-
-
-
-
-
-
-
 
 def generate_table(dataframe):
     return html.Table([ 
@@ -421,13 +305,18 @@ def comparate_models(model1, model2):
                     html.H4("Mejor Score: {}".format(round(log2.best_score_,2)))
                     ], style={'columnCount': 2})
 
+# https://www.bootstrapcdn.com/bootswatch/
+app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP],
+                meta_tags=[{'name': 'viewport',
+                            'content': 'width=device-width, initial-scale=1.0'}]
+                )
 
 
-app = dash.Dash(__name__,suppress_callback_exceptions=True)
-
+# Layout section: Bootstrap (https://hackerthemes.com/bootstrap-cheatsheet/)
+# ************************************************************************
 app.layout = html.Div(children=[
      
-    html.H1('Modelo de rotación de empleados con una retención estratégica'),
+    html.H1('MODELO DE DETECCIÓN DE FRAUDE TRANSACCIONAL'),
 
     dcc.Tabs(id="tabs-graph", value='tab-1-graph', children=[
         dcc.Tab(label='Análisis Descriptivo', value='tab-1-graph'),
@@ -442,6 +331,143 @@ app.layout = html.Div(children=[
 
 
 ])
+
+
+@app.callback(Output('tabs-content-graph', 'children'),
+                            Input('tabs-graph', 'value'))
+def render_content(tab):
+        if tab == 'tab-1-graph':
+            return html.Div([
+                dbc.Container([
+
+                    dbc.Row(
+                        dbc.Col(html.H1("Descripción transacciones",
+                                        className='text-center text-primary mb-4'),
+                                width=12)
+                    ),
+
+                    dbc.Row([
+
+                        dbc.Col([
+                            dcc.Dropdown(id='my-dpdn', multi=False, value='CASH_OUT',
+                                        options=[{'label':x, 'value':x}
+                                                for x in sorted(df['type'].unique())],
+                                        ),
+                            dcc.Graph(id='line-fig', figure={})
+                        ],# width={'size':5, 'offset':1, 'order':1},
+                        xs=12, sm=12, md=12, lg=5, xl=5
+                        ),
+
+                        dbc.Col([
+                            dcc.Dropdown(id='my-dpdn2', multi=True, value=['CASH_OUT','TRANSFER'],
+                                        options=[{'label':x, 'value':x}
+                                                for x in sorted(df['type'].unique())],
+                                        ),
+                            dcc.Graph(id='line-fig2', figure={})
+                        ], #width={'size':5, 'offset':0, 'order':2},
+                        xs=12, sm=12, md=12, lg=5, xl=5
+                        ),
+
+                    ], justify='start'),  # Horizontal:start,center,end,between,around
+
+                    dbc.Row([
+                        dbc.Col([
+                            html.P("Seleccione una transacción:",
+                                style={"textDecoration": "underline"}),
+                            dcc.Checklist(id='my-checklist', value=['CASH_OUT', 'TRANSFER', 'CASH_IN'],
+                                        options=[{'label':x, 'value':x}
+                                                for x in sorted(df['type'].unique())],
+                                        labelClassName="mr-3"),
+                            dcc.Graph(id='my-hist', figure={}),
+                        ], #width={'size':5, 'offset':1},
+                        xs=12, sm=12, md=12, lg=5, xl=5
+                        ),
+
+
+                    ], align="center")  # Vertical: start, center, end
+
+                ], fluid=True)
+]) 
+        elif tab == 'tab-2-graph':
+                    return html.Div([
+                html.Div([
+                    html.Div([
+                    html.H3('Resultados de la evaluación promedio de los modelos supervisados'),
+                    generate_table(attrition_results)
+                ], style={'width': '49%', 'display': 'inline-block'}),
+                html.Div([
+                    dcc.Graph(
+                        id='example-graph1',
+                        figure=figbox
+                    )
+                ], style={'width': '49%', 'display': 'inline-block', 'float': 'right'}),
+               
+                ]), 
+                    html.Div([
+                    ],style={'width': '100%', 'display': 'inline-block'}),
+
+                html.Div([
+                dcc.Dropdown(
+                    id='model1',
+                    options=[{'label': i, 'value': i} for i in names],
+                    value=names[0]
+                ),
+                dcc.Graph(
+                        id='example-graph1',
+                        figure=figlogreg
+                )
+                ],style={'width': '49%', 'display': 'inline-block'}),
+                html.Div([
+                dcc.Dropdown(
+                    id='model2',
+                    options=[{'label': i, 'value': i} for i in names],
+                    value=names[1]
+                ),
+                dcc.Graph(
+                        id='example-graph2',
+                        figure=figrf
+                )
+                ],style={'width': '49%', 'display': 'inline-block', 'float': 'right'})
+            ])     
+
+    
+
+
+# Callback section: connecting the components
+# ************************************************************************
+# Line chart - Single
+@app.callback(
+    Output('line-fig', 'figure'),
+    Input('my-dpdn', 'value')
+)
+def update_graph(transaction):
+    dff = df[df['type']==transaction]
+    figln = px.line(dff, x='step', y='amount')
+    return figln
+
+
+# Line chart - multiple
+@app.callback(
+    Output('line-fig2', 'figure'),
+    Input('my-dpdn2', 'value')
+)
+def update_graph(transaction):
+    dff = df[df['type'].isin(transaction)]
+    figln2 = px.line(dff, x='step', y='amount', color='isFraud')
+    return figln2
+
+
+# Histogram
+@app.callback(
+    Output('my-hist', 'figure'),
+    Input('my-checklist', 'value')
+)
+def update_graph(transaction):
+    dff = df[df['type'].isin(transaction)]
+    dff = dff[dff['type']=='TRANSFER']
+    fighist = px.bar(dff, x='type', y='isFraud')
+    return fighist
+
 
 
 @app.callback(dash.dependencies.Output('example-graph1', 'figure'),
