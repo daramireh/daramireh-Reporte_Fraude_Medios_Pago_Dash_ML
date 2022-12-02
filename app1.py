@@ -30,6 +30,30 @@ from sklearn import svm
 # cargue datos
 df = pd.read_csv('df_c.csv', sep=';')
 
+resumen = df.groupby(['step', 'type',]).agg(isFraud_sum=('isFraud', 'sum')).reset_index()
+
+resumen['type'] = resumen['type'].astype(str)
+resumen['type'] = resumen['type'].replace('0', 'TRANSFER')
+resumen['type'] = resumen['type'].replace('1', 'CASH_OUT')
+
+resumen1 = resumen.groupby(['type']).agg(isFraud_sum=('isFraud_sum', 'sum')).reset_index()
+
+
+
+'''resumen.columns = ['_'.join(multi_index) for multi_index in resumen.columns.ravel()]
+resumen = resumen.reset_index()
+'''
+## montos de transacciones
+amount = df.groupby(['step', 'type', 'isFraud']).agg(amount_sum=('amount', 'sum')).reset_index()
+'''amount.columns = ['_'.join(multi_index) for multi_index in amount.columns.ravel()]
+amount = amount.reset_index()
+'''
+## numero de transacciones
+trans = df.groupby(['step', 'type', 'isFraud']).agg(trans = ('isFraud','count')).reset_index()
+'''trans.columns = ['_'.join(multi_index) for multi_index in trans.columns.ravel()]
+trans = trans.reset_index()
+'''
+print(resumen['type'].value_counts())
 
 # Manipulacion de datos
 
@@ -38,16 +62,43 @@ df = pd.read_csv('df_c.csv', sep=';')
 Y = df.iloc[: , -1]
 X = df.iloc[: , 0:9]
 
-print(df.head(5))
-print()
+'''print(df.head(5))
+print()'''
 
 # import MinMaxScaler
 
 scaler = MinMaxScaler(feature_range=(0, 5))
 
 names1 = ['No', 'Si']
-fig = px.pie(values=df.isFraud.value_counts(), names=names1)
-fig.update_layout(title="Tasa de fraude")
+
+figpie = px.pie(values=df.isFraud.value_counts(), names=names1)
+figpie.update_layout(title="Proporción transacciones fraude vs no fraude")
+
+figln = px.line(amount, x='step', y='amount_sum')
+figln.update_xaxes(showticklabels=True,tickangle=30,col=2)
+figln.update_yaxes(title = "Valor transacciones", zeroline=True, zerolinewidth=1, zerolinecolor='#28221D')
+figln.update_layout(title="Valor transacciones")
+
+figln2 = px.line(amount, x='step', y='amount_sum', color='isFraud')
+figln2.update_xaxes(showticklabels=True,tickangle=30,col=2)
+figln2.update_yaxes(title = "Valor transacciones", zeroline=True, zerolinewidth=1, zerolinecolor='#28221D')
+figln2.update_layout(title = 'Valor transacciones fraude vs no fraude')
+
+figln3 = px.line(trans, x='step', y='trans', color = 'type')
+figln3.update_xaxes(showticklabels=True,tickangle=30,col=2)
+figln3.update_yaxes(title = "Número de transacciones", zeroline=True, zerolinewidth=1, zerolinecolor='#28221D')
+figln3.update_layout(title = 'Número de transacciones')
+
+
+fighist = px.bar(resumen1, x='type', y = 'isFraud_sum')
+fighist.update_yaxes(title = "Número de transacciones", zeroline=True, zerolinewidth=1, zerolinecolor='#28221D')
+fighist.update_layout(title = 'Número de transacciones fraudulentas por tipo de transacción')
+
+
+figln4 = px.line(resumen, x='step', y='isFraud_sum', color='type')
+figln4.update_xaxes(showticklabels=True,tickangle=30,col=2)
+figln4.update_yaxes(title = "Número de transacciones fraudulentas", zeroline=True, zerolinewidth=1, zerolinecolor='#28221D')
+figln4.update_layout(title = 'Número de transacciones fraude vs no fraude por tipo de transacción')
 
 
 
@@ -334,61 +385,139 @@ app.layout = html.Div(children=[
 
 
 @app.callback(Output('tabs-content-graph', 'children'),
-                            Input('tabs-graph', 'value'))
+              Input('tabs-graph', 'value'))
 def render_content(tab):
-        if tab == 'tab-1-graph':
-            return html.Div([
-                dbc.Container([
+    if tab == 'tab-1-graph':
+        return html.Div([
+            dcc.Markdown('''
+            ## Tablero para el control estadístico del riesgo transaccional
 
-                    dbc.Row(
-                        dbc.Col(html.H1("Descripción transacciones",
-                                        className='text-center text-primary mb-4'),
-                                width=12)
-                    ),
+            Este reporte contine la descripción de las variables de interes, su comportamiento en el tiempo y demás información descriptiva.
+            El tablero fue desarrollado en Python basado en una imagen de la versión 3.8 de Docker.
+            Los modelos de Machine Learning fueron desarrollados utilizando pipelines y otras técnicas de programación que optimizan el procesamiento
+            y reducen el costo computacional. A continuación se explica qué es riesgo financiero y porqué es importante el control estadístico del mismo. 
 
-                    dbc.Row([
+            ### ¿Qué es riesgo financiero?
 
-                        dbc.Col([
-                            dcc.Dropdown(id='my-dpdn', multi=False, value='CASH_OUT',
-                                        options=[{'label':x, 'value':x}
-                                                for x in sorted(df['type'].unique())],
-                                        ),
-                            dcc.Graph(id='line-fig', figure={})
-                        ],# width={'size':5, 'offset':1, 'order':1},
-                        xs=12, sm=12, md=12, lg=5, xl=5
-                        ),
+            El riesgo financiero es la probabilidad de que se produzca un acontecimiento negativo que provoque pérdidas financieras en una empresa. 
+            Debe de ser calculado antes de decidir llevar a cabo una inversión.
+            La mayoría de empresas realizan inversiones de forma periódica para poder mantener su actividad o desarrollar nuevos proyectos 
+            que le generen una fuente de ingresos.
+            En cualquier inversión que se desee realizar, es fundamental cuantificar los riesgo que conlleva. En función del riesgo, 
+            se decidirá finalmente si se lleva a cabo o se rechaza.
+            El riesgo generalmente está ligado a la rentabilidad. Cuanto mayor es el riesgo de una inversión, 
+            mayor rentabilidad se podrá obtener si sale bien. Es importante destacar que, en función del perfil de la empresa o persona que invierte, 
+            se decidirán asumir un mayor o menor número de riesgos.
 
-                        dbc.Col([
-                            dcc.Dropdown(id='my-dpdn2', multi=True, value=['CASH_OUT','TRANSFER'],
-                                        options=[{'label':x, 'value':x}
-                                                for x in sorted(df['type'].unique())],
-                                        ),
-                            dcc.Graph(id='line-fig2', figure={})
-                        ], #width={'size':5, 'offset':0, 'order':2},
-                        xs=12, sm=12, md=12, lg=5, xl=5
-                        ),
+            Tomado de la defininición técnica de Fraude Financiero https://economipedia.com/definiciones/riesgo-financiero.html
 
-                    ], justify='start'),  # Horizontal:start,center,end,between,around
+            ### Fraude en sistema de pagos, ¿por qué este reporte estadístico?
 
-                    dbc.Row([
-                        dbc.Col([
-                            html.P("Seleccione una transacción:",
-                                style={"textDecoration": "underline"}),
-                            dcc.Checklist(id='my-checklist', value=['CASH_OUT', 'TRANSFER', 'CASH_IN'],
-                                        options=[{'label':x, 'value':x}
-                                                for x in sorted(df['type'].unique())],
-                                        labelClassName="mr-3"),
-                            dcc.Graph(id='my-hist', figure={}),
-                        ], #width={'size':5, 'offset':1},
-                        xs=12, sm=12, md=12, lg=5, xl=5
-                        ),
+            El fraude en pagos se produce cuando alguien roba la información de pago privada de otra persona 
+            (o la engaña para que la comparta) y luego utiliza esa información para una transacción falsa o ilegal. 
+            Cada vez que un nuevo método o servicio de pago gana popularidad, el panorama de los pagos cambia. Y también lo hacen los estafadores. 
+            Se adaptan a cada nueva tendencia desarrollando nuevos y más sofisticados esquemas de fraude en pagos.
 
+            Los estafadores utilizan el eslabón más débil de la cadena de acontecimientos que conducen al fraude en pagos: las personas. 
+            Cualquier persona que realice pagos o utilice servicios de pago es un objetivo potencial. Por desgracia, a los delincuentes 
+            no les resulta difícil manipular a las personas para conseguir sus objetivos.
 
-                    ], align="center")  # Vertical: start, center, end
+            En todo el mundo, los defraudadores han adaptado, migrado y ampliado rápidamente sus tácticas de fraude aprovechándose 
+            de las organizaciones y personas que no están preparadas. Si se mantienen las tendencias actuales, Juniper Research afirma 
+            que las pérdidas por fraude en pagos online ascenderán a 48.000 millones de dólares en 2023. Y eso es sólo la punta del iceberg.
 
-                ], fluid=True)
-]) 
-        elif tab == 'tab-2-graph':
+            Tomado de El fraude en los pagos evoluciona rápidamente. ¿Podemos estar preparados? https://www.sas.com/es_es/insights/articles/risk-fraud/payment-fraud-evolves-fast-can-we-stay-ahead.html#/
+
+            ''', mathjax=True),
+                    html.H3('Análisis de la variable de interés'),
+                    html.Div([
+                    dcc.Graph(
+                    id='example-graph',
+                    figure=figpie
+                    )
+                    ], style={'width': '49%', 'display': 'inline-block'}),
+                    html.Div([
+                        dcc.Markdown('''
+                        ### Modelos de clasificación para detección de fraude transaccional
+
+                        Los modelos de Machine Learning utilizados para determinar si una transacción es fraudulenta o no se basan en Regresión Logística, 
+                        Maquina de Soporte Vectorial y Random Forest. Estos modelos son ajustados por medio de validación cruzada estratficada toda vez que 
+                        la variable de respuesta (booleana que indica si hay fraude o no), se encuentra desbalanceada toda vez que las transacciones fraudulentas 
+                        tienden a una menor proporción respecto de las no fraudulentas.
+
+                        En ese orden de ideas, se presentan los resultados (scoring) de los tres modelos con la validación cruzada y se exponen 
+                        los resultados de la regresión logística sin validación cruzada. Por razones de capacidad de procesamiento se tomó una muestra 
+                        para la construcción del modelo y validación del algoritmo.
+
+                        Dentro de los trabajos académicos en esta área encontramos modelos de machine learning y deep learning para predecir el 
+                        fraude transaccional con medios de pagos como tarjetas de crédito y fraude en transacciones en cajeros automáticos -ATM 
+                        por sus siglas en inglés.
+
+                        Se considera un score bueno cuando está por encima del 80%
+                        ''', mathjax=True)
+                    ], style={'width': '49%', 'display': 'inline-block', 'float': 'right'}),
+                    html.Div([
+                    dcc.Graph(
+                    id='example-graph',
+                    figure=figln
+                    )
+                    ], style={'width': '49%', 'display': 'inline-block'}),
+                    html.Div([
+                    dcc.Graph(
+                    id='example-graph',
+                    figure=figln2
+                    )
+                    ], style={'width': '49%', 'display': 'inline-block', 'float': 'right'}),
+                    html.Div([
+                    dcc.Graph(
+                    id='example-graph',
+                    figure=figln3
+                    )
+                    ], style={'width': '49%', 'display': 'inline-block'}),
+                    html.Div([
+                        dcc.Markdown('''
+                        ### Pipelines 
+
+                            Los pipelines son herramientas que se han desarrollado para optimizar el código de la maquina de aprendizaje, 
+                            permiten mejorar el rendimiento del procesamiento y reducen el costo computacional.
+
+                            Para más información consultar la siguiente documentación de sklearn https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html''', mathjax=True)
+                    ], style={'width': '100%', 'display': 'inline-block', 'float': 'right'}),
+                    html.Div([
+                    ],style={'width': '100%', 'display': 'inline-block'}),
+                    html.Div([
+                    dcc.Graph(
+                    id='example-graph',
+                    figure=figln4
+                    )
+                    ]),
+                    html.Div([
+                        dcc.Markdown('''
+                        ### Transacciones en el tiempo
+                        Se evidencia que a nivel transaccional por step, estas se han comportado homogeneamente a pesar del muestreo aleatorio
+                        estas han seguido un distribución similar excepto en el step 249 y 726 donde se encuentran picos de transacciones fraudulentas.
+                        ''', mathjax=True)
+                    ]),
+                    html.Div([
+                    dcc.Graph(
+                    id='example-graph',
+                    figure=fighist
+                    )
+                    ]),
+                    html.Div([
+                        dcc.Markdown('''
+                        ### Transacciones por tipo de transacción
+                        Aquí se evidencia que la transacciones tienen un comportamiento similar, es decir, la mitad de las transacciones (ver pie)
+                        muestran un comportamiento simetrico entre fraude y no fraude y esto se evidencia claramente en que las transacciones fraudulentas por
+                        tipo de transacción, también se comportan de la misma forma, es decir, la mitad de ambos tipos de transacciones han sido fraude.
+                        Es preciso recordar que se realizó muestreo de las variables con base en la recomendación de hacerla con submuestreo.
+                        Para más información sobre el proceso de submuestreo consultar https://daramireh.github.io/Reporte_Fraude_Medios_Pago/notebooks.html
+                        
+                        ''', mathjax=True)
+                    ]),
+                ])  
+ 
+    elif tab == 'tab-2-graph':
                     return html.Div([
                 html.Div([
                     html.Div([
@@ -433,40 +562,7 @@ def render_content(tab):
     
 
 
-# Callback section: connecting the components
-# ************************************************************************
-# Line chart - Single
-@app.callback(
-    Output('line-fig', 'figure'),
-    Input('my-dpdn', 'value')
-)
-def update_graph(transaction):
-    dff = df[df['type']==transaction]
-    figln = px.line(dff, x='step', y='amount')
-    return figln
 
-
-# Line chart - multiple
-@app.callback(
-    Output('line-fig2', 'figure'),
-    Input('my-dpdn2', 'value')
-)
-def update_graph(transaction):
-    dff = df[df['type'].isin(transaction)]
-    figln2 = px.line(dff, x='step', y='amount', color='isFraud')
-    return figln2
-
-
-# Histogram
-@app.callback(
-    Output('my-hist', 'figure'),
-    Input('my-checklist', 'value')
-)
-def update_graph(transaction):
-    dff = df[df['type'].isin(transaction)]
-    dff = dff[dff['type']=='TRANSFER']
-    fighist = px.bar(dff, x='type', y='isFraud')
-    return fighist
 
 
 
