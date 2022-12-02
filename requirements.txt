@@ -4,4 +4,4 @@ sklearn
 dash
 plotly.express
 datetime
-dash-bootstrap-component
+dash-bootstrap-components
